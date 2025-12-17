@@ -4,7 +4,7 @@ import readline from "readline";
 import open from "open";
 import { google } from "googleapis";
 
-const TEMPLATE_ID = "1ahZSamvvym7WV6Rc7YMlpRNXAd3itlEzbkUcQ3aY25U";
+const TEMPLATE_ID = "1bEZRuojfnDsIzJ6hpf-noAA-DuaWeFhWuscQfH7UZ0Y";
 const SCOPES = [
   "https://www.googleapis.com/auth/drive",
   "https://www.googleapis.com/auth/presentations"
@@ -228,6 +228,28 @@ async function resetPresentationToTemplate(slides, presentationId, templateId) {
   return idMap; // Return mapping for edit application
 }
 
+// Clean up text: remove extra spaces and newlines
+function cleanText(text) {
+  if (!text) return text;
+
+  // Replace multiple spaces with single space
+  let cleaned = text.replace(/  +/g, ' ');
+
+  // Replace multiple newlines with single newline
+  cleaned = cleaned.replace(/\n\n+/g, '\n');
+
+  // Trim leading/trailing whitespace from each line
+  cleaned = cleaned.split('\n').map(line => line.trim()).join('\n');
+
+  // Remove trailing newlines from end of text
+  cleaned = cleaned.replace(/\n+$/, '');
+
+  // Remove leading newlines from start of text
+  cleaned = cleaned.replace(/^\n+/, '');
+
+  return cleaned;
+}
+
 // Apply edits to presentation using objectId matching
 async function applyEditsToPresentation(slides, presentationId, editsData, idMap = null) {
   const presentation = await slides.presentations.get({ presentationId });
@@ -290,12 +312,13 @@ async function applyEditsToPresentation(slides, presentationId, editsData, idMap
         }
       });
 
-      // Insert new text
+      // Insert new text (cleaned)
       if (elementEdit.text) {
+        const cleanedText = cleanText(elementEdit.text);
         requests.push({
           insertText: {
             objectId: actualElementId,
-            text: elementEdit.text,
+            text: cleanedText,
             insertionIndex: 0
           }
         });
